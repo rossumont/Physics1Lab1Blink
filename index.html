@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Blink Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: #333;
+            overflow: hidden;
+        }
+
+        .blink-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .blink-container.show {
+            display: flex;
+        }
+
+        .lang-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            z-index: 100;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            padding: 20px;
+            gap: 30px;
+        }
+
+        .title {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .controls {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .label {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .duration-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .blink-box {
+            width: 90vw;
+            height: 90vh;
+            background: white;
+            border-radius: 0;
+            transition: background 0.1s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .blink-box.on {
+            background: #ff0000;
+            color: white;
+        }
+
+        .info-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            min-width: 250px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 1.1em;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .info-value {
+            font-weight: bold;
+            color: #667eea;
+            margin-left: 20px;
+        }
+
+        .status {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            min-height: 30px;
+        }
+
+        .status.ready {
+            color: #333;
+        }
+
+        .status.active {
+            color: #ffd700;
+            animation: pulse 0.5s infinite;
+        }
+
+        .status.done {
+            color: #4caf50;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .start-btn {
+            padding: 15px 40px;
+            font-size: 1.3em;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .start-btn:hover:not(:disabled) {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        .start-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .instruction {
+            color: #999;
+            font-size: 0.9em;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .credit {
+            color: rgba(255,255,255,0.85);
+            font-size: 0.75em;
+            text-align: center;
+            line-height: 1.5;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <button class="lang-toggle" onclick="toggleLanguage()" id="langBtn">ไทย</button>
+
+    <div class="container" id="mainContainer">
+        <div class="title" id="title">Blink Timer</div>
+
+        <div class="controls" id="controlsPanel">
+            <div class="label" id="durationLabel">Flash Duration</div>
+            <div class="duration-buttons">
+                <button class="btn" onclick="selectDuration(3, event)" data-en="3s" data-th="3 วินาที">3 วินาที</button>
+                <button class="btn" onclick="selectDuration(5, event)" data-en="5s" data-th="5 วินาที">5 วินาที</button>
+                <button class="btn" onclick="selectDuration(8, event)" data-en="8s" data-th="8 วินาที">8 วินาที</button>
+                <button class="btn" onclick="selectDuration(10, event)" data-en="10s" data-th="10 วินาที">10 วินาที</button>
+            </div>
+            <div class="instruction" id="instruction">Choose duration and press Start</div>
+        </div>
+
+        <div class="info-panel" id="infoPanel">
+            <div class="status" id="status">Ready</div>
+            <button class="start-btn" onclick="startSequence()" id="startBtn" data-en="Start" data-th="เริ่ม">เริ่ม</button>
+        </div>
+
+        <div class="credit" id="credit">
+            ผศ.ดร.รสสุมนต์ จารยะพันธุ์<br>
+            มหาวิทยาลัยเทคโนโลยีราชมงคลตะวันออก อุเทนถวาย<br>
+            Asst.Prof.Dr. Rossumont Jaryabhand<br>
+            Rajamangala University of Technology Tawan-ok, Uthenthawai Campus
+        </div>
+    </div>
+
+    <div class="blink-container" id="blinkContainer">
+        <div class="blink-box" id="blinkBox"></div>
+    </div>
+
+    <script>
+        let currentLanguage = 'th';
+        let selectedDuration = 5;
+        let isRunning = false;
+        let elapsedTime = 0;
+
+        const translations = {
+            en: {
+                title: 'Blink Timer',
+                durationLabel: 'Flash Duration',
+                instruction: 'Choose duration and press Start',
+                ready: 'Ready',
+                active: 'Watch and start timing...',
+                done: 'Done! Check your time',
+                totalTimeLabel: 'Total Time',
+                blinksLabel: 'Blinks Count',
+                startBtn: 'Start',
+                'langBtn': 'Thai'
+            },
+            th: {
+                title: 'แอปจับเวลากระพริบ',
+                durationLabel: 'ตั้งเวลาไฟสว่าง',
+                instruction: 'เลือกเวลาแล้วกดเริ่ม เด็กจับเวลาด้วยนาฬิกาปกติ',
+                ready: 'พร้อมแล้ว',
+                active: 'ดูและเริ่มจับเวลา...',
+                done: 'เสร็จ! ดูเวลาของคุณ',
+                totalTimeLabel: 'เวลาทั้งหมด',
+                blinksLabel: 'จำนวนกระพริบ',
+                startBtn: 'เริ่ม',
+                'langBtn': 'English'
+            }
+        };
+
+        function updateUI() {
+            const lang = translations[currentLanguage];
+            document.getElementById('title').textContent = lang.title;
+            document.getElementById('durationLabel').textContent = lang.durationLabel;
+            document.getElementById('instruction').textContent = lang.instruction;
+            document.getElementById('startBtn').textContent = lang.startBtn;
+            document.getElementById('langBtn').textContent = lang.langBtn;
+            
+            if (!isRunning) {
+                document.getElementById('status').textContent = lang.ready;
+            }
+        }
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'en' ? 'th' : 'en';
+            updateUI();
+        }
+
+        function selectDuration(duration, evt) {
+            if (isRunning) return;
+            selectedDuration = duration;
+            
+            document.querySelectorAll('.duration-buttons .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            evt.target.classList.add('active');
+        }
+
+        function calculateTotalTime() {
+            // 10 blinks × (flashDuration + 5s dark) - 5s (last dark period removed)
+            return (10 * (selectedDuration + 5)) - 5;
+        }
+
+        async function startSequence() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            elapsedTime = 0;
+            const startBtn = document.getElementById('startBtn');
+            const blinkBox = document.getElementById('blinkBox');
+            const blinkContainer = document.getElementById('blinkContainer');
+            
+            startBtn.disabled = true;
+            document.querySelectorAll('.duration-buttons .btn').forEach(btn => btn.disabled = true);
+            
+            // Show fullscreen mode
+            blinkContainer.classList.add('show');
+
+            // Perform 10 blinks
+            for (let i = 0; i < 10; i++) {
+                // Flash on (RED)
+                blinkBox.classList.add('on');
+                
+                await sleep(selectedDuration * 1000);
+                
+                // Flash off (WHITE) - only if not the last blink
+                blinkBox.classList.remove('on');
+                
+                if (i < 9) {
+                    await sleep(selectedDuration * 1000); // white period = same as red period
+                }
+            }
+
+            // Sequence complete
+            // Wait 2 seconds then return to normal
+            await sleep(2000);
+            
+            blinkContainer.classList.remove('show');
+            
+            isRunning = false;
+            startBtn.disabled = false;
+            document.querySelectorAll('.duration-buttons .btn').forEach(btn => btn.disabled = false);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Initialize
+        updateUI();
+    </script>
+</body>
+</html>
